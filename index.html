@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WC 2026 Company Leaderboard</title>
+    <title>WC 2026 Company Pool</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        body { font-family: system-ui, sans-serif; }
+        body { font-family: system-ui, -apple-system, sans-serif; }
         tr:hover { background-color: #1f2937; }
         .match-card { transition: all 0.2s; }
     </style>
@@ -19,11 +19,11 @@
             <div class="flex gap-3">
                 <button onclick="loadLiveResults()" 
                         class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-2xl font-medium flex items-center gap-2">
-                    <i class="fas fa-sync"></i> Load Latest Results
+                    <i class="fas fa-sync"></i> <span id="load-btn-text">Load Latest Results</span>
                 </button>
                 <button onclick="resetAll()" 
                         class="px-6 py-3 bg-red-600 hover:bg-red-700 rounded-2xl font-medium flex items-center gap-2">
-                    <i class="fas fa-trash"></i> Reset
+                    <i class="fas fa-trash"></i> Reset All
                 </button>
             </div>
         </div>
@@ -51,7 +51,7 @@
 
             <!-- Sidebar -->
             <div class="lg:col-span-5 space-y-6">
-                <!-- Manual -->
+                <!-- Manual Result -->
                 <div class="bg-zinc-900 rounded-3xl p-6">
                     <h3 class="font-semibold mb-4">Manual Result (Fallback)</h3>
                     <div class="grid grid-cols-2 gap-4 mb-4">
@@ -69,12 +69,6 @@
                 <div class="bg-zinc-900 rounded-3xl p-6">
                     <h3 class="font-semibold mb-4">Team Points</h3>
                     <div id="teamList" class="space-y-2 max-h-96 overflow-auto"></div>
-                </div>
-
-                <!-- Recent Matches -->
-                <div class="bg-zinc-900 rounded-3xl p-6">
-                    <h3 class="font-semibold mb-4">Recent Results</h3>
-                    <div id="recent" class="space-y-2 text-sm max-h-64 overflow-auto"></div>
                 </div>
             </div>
         </div>
@@ -95,7 +89,7 @@
             {name: "Phil H", team1: "England", team2: "Morocco"},
             {name: "Angela W", team1: "Ivory Coast", team2: "Australia"},
             {name: "Denis T", team1: "Scotland", team2: "South Korea"},
-            {name: "Sven", team1: "Colombia", team2: "Panama"},
+            {name: "Svilen", team1: "Colombia", team2: "Panama"},
             {name: "Beth M", team1: "Bosnia", team2: "Senegal"},
             {name: "Matthew R", team1: "Mexico", team2: "Iraq"},
             {name: "William D", team1: "Tunisia", team2: "Netherlands"},
@@ -118,7 +112,7 @@
             "Ivory Coast": "Côte d'Ivoire",
             "Cape Verde": "Cape Verde",
             "USA": "United States",
-            "Bosnia": "Bosnia and Herzegovina",
+            "Bosnia": "Bosnia & Herzegovina",
             "Turkey": "Türkiye",
             "South Korea": "Korea Republic"
         };
@@ -128,18 +122,19 @@
         }
 
         async function loadLiveResults() {
-            const btn = document.querySelector('button[onclick="loadLiveResults()"]');
-            const orig = btn.innerHTML;
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Loading...`;
+            const btn = document.getElementById('load-btn-text');
+            const originalText = btn.textContent;
+            btn.textContent = "Loading...";
 
             try {
-                // Reliable GitHub raw JSON (CORS friendly)
                 const res = await fetch('https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json');
                 const data = await res.json();
 
                 let added = 0;
+
                 data.matches.forEach(m => {
                     if (!m.score || !m.score.ft) return;
+
                     const id = `${m.team1}-${m.team2}-${m.date}`;
                     if (processed.has(id)) return;
 
@@ -151,28 +146,31 @@
                         const t1 = normalize(p.team1);
                         const t2 = normalize(p.team2);
                         if ((t1 === home && t2 === away) || (t1 === away && t2 === home)) {
-                            if (hScore > aScore) teamPoints[home] = (teamPoints[home] || 0) + 3;
-                            else if (aScore > hScore) teamPoints[away] = (teamPoints[away] || 0) + 3;
-                            else {
+                            if (hScore > aScore) {
+                                teamPoints[home] = (teamPoints[home] || 0) + 3;
+                            } else if (aScore > hScore) {
+                                teamPoints[away] = (teamPoints[away] || 0) + 3;
+                            } else {
                                 teamPoints[home] = (teamPoints[home] || 0) + 1;
                                 teamPoints[away] = (teamPoints[away] || 0) + 1;
                             }
                             added++;
                         }
                     });
+
                     processed.add(id);
                 });
 
                 localStorage.setItem('wcPoints', JSON.stringify(teamPoints));
                 localStorage.setItem('wcProcessed', JSON.stringify(Array.from(processed)));
                 render();
-                alert(`Added/updated ${added} match results!`);
+                alert(`✅ Successfully processed ${added} new match results!`);
             } catch (e) {
-                alert("Could not load live data. Using manual entry only.");
                 console.error(e);
+                alert("❌ Could not load results right now. Please try again later or use manual entry.");
             }
 
-            btn.innerHTML = orig;
+            btn.textContent = originalText;
         }
 
         function loadSaved() {
@@ -182,18 +180,13 @@
             if (proc) processed = new Set(JSON.parse(proc));
         }
 
-        function save() {
-            localStorage.setItem('wcPoints', JSON.stringify(teamPoints));
-            localStorage.setItem('wcProcessed', JSON.stringify(Array.from(processed)));
-        }
-
         function render() {
             // Leaderboard
             const tbody = document.getElementById('tbody');
             tbody.innerHTML = '';
             const ranked = players.map(p => {
                 const pts = (teamPoints[normalize(p.team1)] || 0) + (teamPoints[normalize(p.team2)] || 0);
-                return { ...p, pts };
+                return {...p, pts};
             }).sort((a, b) => b.pts - a.pts);
 
             ranked.forEach((p, i) => {
@@ -213,19 +206,20 @@
             const list = document.getElementById('teamList');
             list.innerHTML = '';
             Object.entries(teamPoints).sort((a,b) => b[1] - a[1]).forEach(([team, pts]) => {
-                const d = document.createElement('div');
-                d.className = "flex justify-between bg-zinc-800 px-5 py-3 rounded-2xl";
-                d.innerHTML = `<span>${team}</span><span class="font-bold text-emerald-400">${pts}</span>`;
-                list.appendChild(d);
+                const div = document.createElement('div');
+                div.className = "flex justify-between bg-zinc-800 px-5 py-3 rounded-2xl";
+                div.innerHTML = `<span class="font-medium">${team}</span><span class="font-bold text-emerald-400 text-xl">${pts}</span>`;
+                list.appendChild(div);
             });
 
-            document.getElementById('match-count').textContent = `${processed.size} results`;
+            document.getElementById('match-count').textContent = `${processed.size} matches`;
         }
 
         function renderSelects() {
             const teams = [...new Set(players.flatMap(p => [p.team1, p.team2]))].sort();
-            const s1 = document.getElementById('t1'), s2 = document.getElementById('t2');
-            s1.innerHTML = s2.innerHTML = '<option value="">Select</option>';
+            const s1 = document.getElementById('t1');
+            const s2 = document.getElementById('t2');
+            s1.innerHTML = s2.innerHTML = '<option value="">Select team</option>';
             teams.forEach(t => {
                 s1.innerHTML += `<option value="${t}">${t}</option>`;
                 s2.innerHTML += `<option value="${t}">${t}</option>`;
@@ -235,22 +229,26 @@
         function recordResult(winner) {
             const t1 = document.getElementById('t1').value;
             const t2 = document.getElementById('t2').value;
-            if (!t1 || !t2 || t1 === t2) return alert("Select two different teams");
+            if (!t1 || !t2 || t1 === t2) return alert("Please select two different teams");
 
-            const nt1 = normalize(t1), nt2 = normalize(t2);
+            const nt1 = normalize(t1);
+            const nt2 = normalize(t2);
+
             if (winner === 1) teamPoints[nt1] = (teamPoints[nt1] || 0) + 3;
             else if (winner === 2) teamPoints[nt2] = (teamPoints[nt2] || 0) + 3;
             else {
                 teamPoints[nt1] = (teamPoints[nt1] || 0) + 1;
                 teamPoints[nt2] = (teamPoints[nt2] || 0) + 1;
             }
+
             processed.add(`${t1}-${t2}`);
-            save();
+            localStorage.setItem('wcPoints', JSON.stringify(teamPoints));
+            localStorage.setItem('wcProcessed', JSON.stringify(Array.from(processed)));
             render();
         }
 
         function resetAll() {
-            if (confirm("Reset everything?")) {
+            if (confirm("Reset all points and history?")) {
                 teamPoints = {};
                 processed = new Set();
                 localStorage.clear();
@@ -262,8 +260,8 @@
             loadSaved();
             renderSelects();
             render();
-            // Auto-load on start
-            setTimeout(loadLiveResults, 800);
+            // Try to load live results automatically once
+            setTimeout(loadLiveResults, 1000);
         };
     </script>
 </body>
