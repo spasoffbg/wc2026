@@ -7,8 +7,22 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        body { font-family: system-ui, sans-serif; }
+        body { font-family: system-ui, -apple-system, sans-serif; }
         tr:hover { background-color: #1f2937; }
+        
+        .result-btn {
+            transition: all 0.2s ease;
+            height: 110px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+        }
+        .result-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+        }
     </style>
 </head>
 <body class="bg-zinc-950 text-white min-h-screen p-6">
@@ -41,33 +55,34 @@
                 </table>
             </div>
 
-            <!-- Controls -->
+            <!-- Sidebar -->
             <div class="lg:col-span-5 space-y-6">
-                <!-- Manual Input -->
                 <div class="bg-zinc-900 rounded-3xl p-8">
                     <h3 class="font-semibold mb-6 text-xl">Record Match Result</h3>
-                    <div class="grid grid-cols-2 gap-4 mb-6">
-                        <select id="t1" class="bg-zinc-800 border border-zinc-700 rounded-2xl p-4 text-white"></select>
-                        <select id="t2" class="bg-zinc-800 border border-zinc-700 rounded-2xl p-4 text-white"></select>
-                    </div>
-                    <div class="flex gap-3">
+                    <div class="grid grid-cols-3 gap-4">
+                        <!-- Team 1 Wins -->
                         <button onclick="recordResult(1)" 
-                                class="flex-1 bg-emerald-600 hover:bg-emerald-700 py-5 rounded-2xl font-semibold text-lg">
-                            Team 1 Wins (3 pts)
+                                class="result-btn bg-emerald-600 hover:bg-emerald-500 rounded-3xl font-semibold text-white">
+                            <span class="text-lg">Team 1 Wins</span>
+                            <span class="text-sm opacity-90">3 pts</span>
                         </button>
+                        
+                        <!-- Draw -->
                         <button onclick="recordResult(0)" 
-                                class="flex-1 bg-amber-500 hover:bg-amber-600 py-5 rounded-2xl font-semibold text-lg">
-                            Draw (1 pt each)
+                                class="result-btn bg-amber-500 hover:bg-amber-400 rounded-3xl font-semibold text-white">
+                            <span class="text-lg">Draw</span>
+                            <span class="text-sm opacity-90">1 pt each</span>
                         </button>
+                        
+                        <!-- Team 2 Wins -->
                         <button onclick="recordResult(2)" 
-                                class="flex-1 bg-rose-600 hover:bg-rose-700 py-5 rounded-2xl font-semibold text-lg">
-                            Team 2 Wins (3 pts)
+                                class="result-btn bg-rose-600 hover:bg-rose-500 rounded-3xl font-semibold text-white">
+                            <span class="text-lg">Team 2 Wins</span>
+                            <span class="text-sm opacity-90">3 pts</span>
                         </button>
                     </div>
-                    <p class="text-center text-zinc-500 text-sm mt-4">Points are added automatically</p>
                 </div>
 
-                <!-- Team Points -->
                 <div class="bg-zinc-900 rounded-3xl p-8">
                     <h3 class="font-semibold mb-4 text-xl">Team Points</h3>
                     <div id="teamList" class="space-y-3 max-h-96 overflow-auto pr-2"></div>
@@ -107,8 +122,14 @@
         let teamPoints = {};
 
         function normalize(name) {
-            const map = {"DR Congo": "Congo DR", "Curacao": "Curaçao", "Czechia": "Czech Republic", 
-                         "Ivory Coast": "Côte d'Ivoire", "USA": "United States", "Bosnia": "Bosnia & Herzegovina"};
+            const map = {
+                "DR Congo": "Congo DR",
+                "Curacao": "Curaçao",
+                "Czechia": "Czech Republic",
+                "Ivory Coast": "Côte d'Ivoire",
+                "USA": "United States",
+                "Bosnia": "Bosnia & Herzegovina"
+            };
             return map[name] || name;
         }
 
@@ -122,9 +143,9 @@
         }
 
         function render() {
-            // Leaderboard
             const tbody = document.getElementById('tbody');
             tbody.innerHTML = '';
+
             const ranked = players.map(p => {
                 const pts = (teamPoints[normalize(p.team1)] || 0) + (teamPoints[normalize(p.team2)] || 0);
                 return {...p, pts};
@@ -135,7 +156,7 @@
                 tr.className = "border-b border-zinc-800 hover:bg-zinc-800";
                 tr.innerHTML = `
                     <td class="py-5 pl-3 font-bold text-emerald-400">${i+1}</td>
-                    <td class="py-5 font-medium">${p.name}</td>
+                    <td class="py-5">${p.name}</td>
                     <td class="py-5">${p.team1}</td>
                     <td class="py-5">${p.team2}</td>
                     <td class="py-5 text-right font-bold text-3xl text-emerald-400">${p.pts}</td>
@@ -143,19 +164,16 @@
                 tbody.appendChild(tr);
             });
 
-            // Team Points
             const list = document.getElementById('teamList');
             list.innerHTML = '';
-            Object.entries(teamPoints)
-                .sort((a,b) => b[1] - a[1])
-                .forEach(([team, pts]) => {
-                    const div = document.createElement('div');
-                    div.className = "flex justify-between bg-zinc-800 px-5 py-4 rounded-2xl";
-                    div.innerHTML = `<span>${team}</span><span class="font-bold text-emerald-400">${pts}</span>`;
-                    list.appendChild(div);
-                });
+            Object.entries(teamPoints).sort((a,b) => b[1]-a[1]).forEach(([team, pts]) => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between bg-zinc-800 px-5 py-4 rounded-2xl";
+                div.innerHTML = `<span>${team}</span><span class="font-bold text-emerald-400">${pts}</span>`;
+                list.appendChild(div);
+            });
 
-            document.getElementById('match-count').textContent = `${Object.keys(teamPoints).length} teams tracked`;
+            document.getElementById('match-count').textContent = `${Object.keys(teamPoints).length} teams`;
         }
 
         function renderSelects() {
@@ -190,13 +208,12 @@
             save();
             render();
 
-            // Clear selects
             document.getElementById('t1').value = '';
             document.getElementById('t2').value = '';
         }
 
         function resetAll() {
-            if (confirm("Reset ALL points?")) {
+            if (confirm("Reset all points?")) {
                 teamPoints = {};
                 localStorage.clear();
                 render();
