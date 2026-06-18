@@ -60,23 +60,17 @@
                 <div class="bg-zinc-900 rounded-3xl p-8">
                     <h3 class="font-semibold mb-6 text-xl">Record Match Result</h3>
                     <div class="grid grid-cols-3 gap-4">
-                        <!-- Team 1 Wins -->
-                        <button onclick="recordResult(1)" 
-                                class="result-btn bg-emerald-600 hover:bg-emerald-500 rounded-3xl font-semibold text-white">
+                        <button onclick="recordResult(1)" class="result-btn bg-emerald-600 hover:bg-emerald-500 rounded-3xl font-semibold text-white">
                             <span class="text-lg">Team 1 Wins</span>
                             <span class="text-sm opacity-90">3 pts</span>
                         </button>
                         
-                        <!-- Draw -->
-                        <button onclick="recordResult(0)" 
-                                class="result-btn bg-amber-500 hover:bg-amber-400 rounded-3xl font-semibold text-white">
+                        <button onclick="recordResult(0)" class="result-btn bg-amber-500 hover:bg-amber-400 rounded-3xl font-semibold text-white">
                             <span class="text-lg">Draw</span>
                             <span class="text-sm opacity-90">1 pt each</span>
                         </button>
                         
-                        <!-- Team 2 Wins -->
-                        <button onclick="recordResult(2)" 
-                                class="result-btn bg-rose-600 hover:bg-rose-500 rounded-3xl font-semibold text-white">
+                        <button onclick="recordResult(2)" class="result-btn bg-rose-600 hover:bg-rose-500 rounded-3xl font-semibold text-white">
                             <span class="text-lg">Team 2 Wins</span>
                             <span class="text-sm opacity-90">3 pts</span>
                         </button>
@@ -180,6 +174,12 @@
             const teams = [...new Set(players.flatMap(p => [p.team1, p.team2]))].sort();
             const s1 = document.getElementById('t1');
             const s2 = document.getElementById('t2');
+            
+            if (!s1 || !s2) {
+                console.error("Select elements not found!");
+                return;
+            }
+
             s1.innerHTML = s2.innerHTML = '<option value="">— Select Team —</option>';
             teams.forEach(t => {
                 s1.innerHTML += `<option value="${t}">${t}</option>`;
